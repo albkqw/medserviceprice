@@ -2,7 +2,8 @@ FROM python:3.11-slim
 
 # Prevent Python from writing .pyc files and buffering stdout/stderr
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
