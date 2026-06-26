@@ -1,8 +1,9 @@
 services:
   api:
     build: ./backend
-    # --reload watches for file changes; the volume mount below makes that work.
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Run migrations first, then start the server.
+    # alembic upgrade head is idempotent — safe to run on every startup.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./backend:/app
     ports:
