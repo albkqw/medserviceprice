@@ -17,3 +17,9 @@ class UnmatchedStatus(str, enum.Enum):
     pending = "pending"
     matched = "matched"
     rejected = "rejected"
+
+
+class ParseRunStatus(str, enum.Enum):
+    running = "running"
+    success = "success"
+    failed = "failed"

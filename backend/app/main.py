@@ -10,6 +10,7 @@ from app.api.v1 import router as api_v1_router
 from app.core.config import settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.core.logging import setup_logging
+from app.scheduler.scheduler import scheduler, setup_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     setup_logging(debug=settings.DEBUG)
     logger.info("Starting %s", settings.APP_NAME)
+    setup_scheduler()
+    scheduler.start()
+    logger.info("Scheduler started")
     yield
+    scheduler.shutdown(wait=False)
     logger.info("Shutting down %s", settings.APP_NAME)
 
 

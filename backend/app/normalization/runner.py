@@ -14,12 +14,15 @@ the next run picks them up automatically.
 
 import asyncio
 import logging
+import re
 import sys
 import uuid
 
 from sqlalchemy import func, select
 
 from app.db.engine import AsyncSessionLocal
+from app.models.city import City
+from app.models.clinic import Clinic
 from app.models.enums import ServiceCategory
 from app.models.parser_source import ParserSource
 from app.models.raw_price import RawPrice
@@ -38,7 +41,54 @@ logger = logging.getLogger(__name__)
 # Override here when a new source covers a different service type.
 SOURCE_DEFAULT_CATEGORY: dict[str, ServiceCategory] = {
     "kdl": ServiceCategory.lab,
+    "invitro": ServiceCategory.lab,
+    "doq": ServiceCategory.doctor_visit,
 }
+
+
+_CITY_SUFFIX_RE = re.compile(r"\(([^)]+)\)\s*$")
+
+
+async def _bootstrap_clinics(session, source: ParserSource) -> int:
+    """Auto-create Clinic records for any raw_clinic_name not yet in the DB.
+
+    Expects clinic names in the format "Clinic Name (City Name)".
+    Idempotent — skips names that already exist (matched by name + city_id).
+    """
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    rows = await session.execute(
+        select(RawPrice.raw_clinic_name)
+        .where(RawPrice.parser_source_id == source.id)
+        .distinct()
+    )
+    raw_names: list[str] = [r[0] for r in rows.all()]
+
+    cities_result = await session.execute(select(City))
+    city_by_name: dict[str, uuid.UUID] = {
+        c.name.lower(): c.id for c in cities_result.scalars().all()
+    }
+
+    created = 0
+    for raw_name in raw_names:
+        m = _CITY_SUFFIX_RE.search(raw_name)
+        if not m:
+            logger.warning("Cannot extract city from clinic name %r — skipping", raw_name)
+            continue
+        city_name = m.group(1).strip()
+        city_id = city_by_name.get(city_name.lower())
+        if city_id is None:
+            logger.warning("Unknown city %r in clinic name %r — skipping", city_name, raw_name)
+            continue
+        await session.execute(
+            pg_insert(Clinic)
+            .values(id=uuid.uuid4(), name=raw_name, city_id=city_id)
+            .on_conflict_do_nothing(index_elements=["name", "city_id"])
+        )
+        created += 1
+
+    await session.commit()
+    return created
 
 
 async def _bootstrap(session, source: ParserSource) -> int:
@@ -88,6 +138,8 @@ async def run(source_slug: str, bootstrap: bool, threshold: float) -> None:
             sys.exit(1)
 
         if bootstrap:
+            clinic_created = await _bootstrap_clinics(session, source)
+            logger.info("Bootstrap clinics: created/verified %d clinic records", clinic_created)
             created = await _bootstrap(session, source)
             logger.info("Bootstrap: created %d new canonical services", created)
 

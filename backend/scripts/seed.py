@@ -33,7 +33,37 @@ _PARSER_SOURCES = [
         "base_url": "https://kdlolymp.kz",
         "is_active": True,
     },
+    {
+        "slug": "invitro",
+        "name": "ИНВИТРО",
+        "base_url": "https://invitro.kz",
+        "is_active": True,
+    },
+    {
+        "slug": "doq",
+        "name": "DOQ.kz",
+        "base_url": "https://doq.kz",
+        "is_active": True,
+    },
 ]
+
+_INVITRO_CLINICS = {
+    "almaty": {
+        "name": "ИНВИТРО Алматы",
+        "website": "https://invitro.kz",
+        "source_url": "https://invitro.kz/analizes/for-doctors/almaty/",
+    },
+    "astana": {
+        "name": "ИНВИТРО Астана",
+        "website": "https://invitro.kz",
+        "source_url": "https://invitro.kz/analizes/for-doctors/astana/",
+    },
+    "shymkent": {
+        "name": "ИНВИТРО Шымкент",
+        "website": "https://invitro.kz",
+        "source_url": "https://invitro.kz/analizes/for-doctors/shymkent/",
+    },
+}
 
 # KDL has one branch per city.  Keyed by city slug.
 _KDL_CLINICS = {
@@ -81,16 +111,17 @@ async def main() -> None:
         cities_result = await session.execute(select(City))
         city_by_slug = {c.slug: c for c in cities_result.scalars().all()}
 
-        for city_slug, clinic_data in _KDL_CLINICS.items():
-            city = city_by_slug.get(city_slug)
-            if city is None:
-                print(f"Warning: city '{city_slug}' not found, skipping clinic")
-                continue
-            await session.execute(
-                pg_insert(Clinic)
-                .values(id=uuid.uuid4(), city_id=city.id, **clinic_data)
-                .on_conflict_do_nothing()
-            )
+        for clinics_dict in (_KDL_CLINICS, _INVITRO_CLINICS):
+            for city_slug, clinic_data in clinics_dict.items():
+                city = city_by_slug.get(city_slug)
+                if city is None:
+                    print(f"Warning: city '{city_slug}' not found, skipping clinic")
+                    continue
+                await session.execute(
+                    pg_insert(Clinic)
+                    .values(id=uuid.uuid4(), city_id=city.id, **clinic_data)
+                    .on_conflict_do_nothing(index_elements=["name", "city_id"])
+                )
 
         await session.commit()
 
@@ -99,8 +130,9 @@ async def main() -> None:
         print(f"  City: {c['name']} ({c['slug']})")
     for s in _PARSER_SOURCES:
         print(f"  ParserSource: {s['slug']} — {s['name']}")
-    for city_slug, clinic in _KDL_CLINICS.items():
-        print(f"  Clinic: {clinic['name']} ({city_slug})")
+    for clinics_dict in (_KDL_CLINICS, _INVITRO_CLINICS):
+        for city_slug, clinic in clinics_dict.items():
+            print(f"  Clinic: {clinic['name']} ({city_slug})")
 
 
 if __name__ == "__main__":

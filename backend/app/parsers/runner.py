@@ -9,6 +9,8 @@ import asyncio
 import logging
 import sys
 
+from app.parsers.sources.doq import DoqParser
+from app.parsers.sources.invitro import InvitroParser
 from app.parsers.sources.kdl import KDLParser
 from app.parsers.storage import save_items
 
@@ -20,6 +22,8 @@ logging.basicConfig(
 
 _PARSERS = {
     "kdl": KDLParser,
+    "invitro": InvitroParser,
+    "doq": DoqParser,
 }
 
 
