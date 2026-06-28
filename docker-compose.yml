@@ -1,13 +1,26 @@
+### Production ################################################################
+# docker compose up --build
+#
+# Frontend (Nginx):  http://localhost
+# API (internal):    http://api:8000   (not exposed — nginx proxies /api/*)
+# DB (psql access):  localhost:5432
+
 services:
+  frontend:
+    build:
+      context: ./frontend
+      # VITE_API_URL is relative so nginx on the same origin routes it correctly
+      args:
+        VITE_API_URL: /api/v1
+        VITE_APP_NAME: MedServicePrice.kz
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
   api:
     build: ./backend
-    # Run migrations first, then start the server.
-    # alembic upgrade head is idempotent — safe to run on every startup.
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1"
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
     env_file:
       - ./backend/.env
     environment:
@@ -23,10 +36,9 @@ services:
     env_file:
       - ./backend/.env
     ports:
-      # expose 5432 so you can connect with psql / DBeaver directly
+      # Expose so you can connect with psql / DBeaver directly
       - "5432:5432"
     healthcheck:
-      # $$ escapes to a single $ so the container shell expands the var, not Docker Compose
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s

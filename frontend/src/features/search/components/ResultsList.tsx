@@ -73,7 +73,7 @@ export function ResultsList({
 
   return (
     <div className="flex flex-col gap-3">
-      {sorted.map((result, i) => (
+      {sorted.map((result) => (
         <ResultCard
           key={`${result.clinic_id}-${result.service_id}-${result.price_kzt}`}
           result={result}
