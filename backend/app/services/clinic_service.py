@@ -2,7 +2,7 @@ import uuid
 
 from app.core.exceptions import NotFoundError
 from app.repositories.clinic_repository import ClinicRepository
-from app.schemas.clinic import ClinicResponse
+from app.schemas.clinic import ClinicResponse, ClinicServiceItem
 
 
 class ClinicService:
@@ -25,3 +25,21 @@ class ClinicService:
             city_slug=city_slug, offset=offset, limit=limit
         )
         return [ClinicResponse.model_validate(c) for c in clinics]
+
+    async def get_services(self, clinic_id: uuid.UUID) -> list[ClinicServiceItem]:
+        clinic = await self.clinic_repo.get_by_id_with_city(clinic_id)
+        if not clinic:
+            raise NotFoundError("Clinic", str(clinic_id))
+        rows = await self.clinic_repo.get_services(clinic_id)
+        return [
+            ClinicServiceItem(
+                service_id=row.service_id,
+                service_name=row.service_name,
+                category=row.category,
+                price_kzt=row.price_kzt,
+                duration_days=row.duration_days,
+                parsed_at=row.parsed_at,
+                source_url=row.source_url,
+            )
+            for row in rows
+        ]

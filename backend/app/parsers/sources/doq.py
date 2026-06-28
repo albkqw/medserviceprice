@@ -16,6 +16,13 @@ _CITY_MAP: dict[int, str] = {
     5: "Шымкент",
 }
 
+# DOQ city_id → city slug used in doq.kz URLs (/doctors/{city_slug}/{service_slug})
+_CITY_SLUG_MAP: dict[int, str] = {
+    3: "almaty",
+    1: "astana",
+    5: "shymkent",
+}
+
 
 async def _fetch_all(client: HttpClient, url: str) -> list[dict]:
     """Paginate through all pages of a DOQ list endpoint."""
@@ -46,6 +53,8 @@ class DoqParser(BaseParser):
             logger.info("Loading services index...")
             raw_services = await _fetch_all(client, f"{_BASE_URL}/services/?limit=100")
             service_map: dict[int, str] = {s["id"]: s["name"] for s in raw_services}
+            # service_id → slug used in doq.kz URLs (/doctors/{city}/{service_slug})
+            service_slug_map: dict[int, str] = {s["id"]: s["slug"] for s in raw_services}
             logger.info("Loaded %d services", len(service_map))
 
             logger.info("Loading clinic-branches index...")
@@ -95,7 +104,11 @@ class DoqParser(BaseParser):
                     continue
 
                 city_name = _CITY_MAP[branch["city"]]
-                source_url = f"https://doq.kz/clinics/{branch['slug']}/"
+                city_slug = _CITY_SLUG_MAP[branch["city"]]
+                service_slug = service_slug_map.get(service_id, "")
+                # Link to service search page — shows all doctors offering this service
+                # in the city with prices. DOQ's own links use this pattern.
+                source_url = f"https://doq.kz/doctors/{city_slug}/{service_slug}"
 
                 items.append(
                     ParsedItem(

@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # CORS — list parsed from JSON string in .env
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
+    # Admin API key — required for scheduler endpoints (POST /run, GET /jobs, /runs)
+    ADMIN_API_KEY: str
+
     # PostgreSQL connection parts — composed into a URL via computed_field
     # so individual parts stay readable/overridable in CI and Docker environments
     POSTGRES_USER: str

@@ -63,11 +63,11 @@ async def run(
         processed_ids: list[uuid.UUID] = []
 
         for rp in batch:
-            processed_ids.append(rp.id)
-
             # --- Resolve clinic ---
             clinic_id = clinic_map.get(rp.raw_clinic_name.strip().lower())
             if clinic_id is None:
+                # Clinic doesn't exist yet — skip without marking processed so the
+                # record is retried automatically after _bootstrap_clinics runs.
                 logger.warning("No clinic for raw_clinic_name=%r — skipping", rp.raw_clinic_name)
                 stats["no_clinic"] += 1
                 continue
@@ -76,8 +76,10 @@ async def run(
             try:
                 price_kzt = Decimal(rp.raw_price)
             except InvalidOperation:
+                # Malformed price won't change — mark processed to stop retrying.
                 logger.warning("Bad price value %r on raw_price %s", rp.raw_price, rp.id)
                 stats["bad_price"] += 1
+                processed_ids.append(rp.id)
                 continue
 
             # --- Match service ---
@@ -114,6 +116,8 @@ async def run(
                     .on_conflict_do_nothing()
                 )
                 stats["unmatched"] += 1
+
+            processed_ids.append(rp.id)
 
         # Mark entire batch as processed in one statement
         await session.execute(

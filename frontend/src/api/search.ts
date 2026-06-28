@@ -1,5 +1,5 @@
 import type { ApiSearchResponse } from '@/types/api'
-import type { SearchResult } from '@/types/domain'
+import type { ParserSource, SearchResult } from '@/types/domain'
 import apiClient from './client'
 
 export interface SearchParams {
@@ -10,6 +10,8 @@ export interface SearchParams {
   category?: string
 }
 
+const VALID_SOURCES = new Set<string>(['kdl', 'invitro', 'doq'])
+
 function toSearchResult(raw: ApiSearchResponse['results'][number]): SearchResult {
   return {
     clinic_id: raw.clinic.id,
@@ -19,6 +21,11 @@ function toSearchResult(raw: ApiSearchResponse['results'][number]): SearchResult
     phone: raw.clinic.phone,
     working_hours: raw.clinic.working_hours,
     source_url: raw.source_url ?? raw.clinic.website,
+    source: raw.source_slug && VALID_SOURCES.has(raw.source_slug)
+      ? (raw.source_slug as ParserSource)
+      : null,
+    lat: raw.clinic.lat,
+    lng: raw.clinic.lng,
     service_id: raw.service.id,
     service_name: raw.service.name,
     category: raw.service.category,

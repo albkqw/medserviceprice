@@ -9,7 +9,7 @@ from app.parsers.models import ParsedItem
 logger = logging.getLogger(__name__)
 
 _BASE_API = "https://kdlolymp.kz/api/analysis"
-_ANALYSIS_URL = "https://kdlolymp.kz/ru/analizy/{slug}"
+_ANALYSIS_URL = "https://kdlolymp.kz/services/{slug}"
 
 # city_id → display name used as raw_clinic_name
 _CITIES: dict[int, str] = {

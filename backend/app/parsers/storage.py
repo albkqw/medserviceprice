@@ -44,20 +44,23 @@ async def save_items(items: list[ParsedItem], source_slug: str) -> dict[str, int
                 item.raw_service_name,
                 item.raw_price,
             )
-            stmt = (
-                pg_insert(RawPrice)
-                .values(
-                    parser_source_id=source.id,
-                    raw_clinic_name=item.raw_clinic_name,
-                    raw_service_name=item.raw_service_name,
-                    raw_price=item.raw_price,
-                    raw_currency=item.raw_currency,
-                    raw_duration=item.raw_duration,
-                    source_url=item.source_url,
-                    checksum=checksum,
-                    parsed_at=item.parsed_at,
-                )
-                .on_conflict_do_nothing(index_elements=["checksum"])
+            insert_stmt = pg_insert(RawPrice).values(
+                parser_source_id=source.id,
+                raw_clinic_name=item.raw_clinic_name,
+                raw_service_name=item.raw_service_name,
+                raw_price=item.raw_price,
+                raw_currency=item.raw_currency,
+                raw_duration=item.raw_duration,
+                source_url=item.source_url,
+                checksum=checksum,
+                parsed_at=item.parsed_at,
+            )
+            stmt = insert_stmt.on_conflict_do_update(
+                index_elements=["checksum"],
+                set_={
+                    "source_url": insert_stmt.excluded.source_url,
+                    "parsed_at": insert_stmt.excluded.parsed_at,
+                },
             )
             result = await session.execute(stmt)
             if result.rowcount > 0:

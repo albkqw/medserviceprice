@@ -38,6 +38,8 @@ export interface ApiSearchClinicInfo {
   phone: string | null
   working_hours: string | null
   website: string | null
+  lat: number | null
+  lng: number | null
 }
 
 export interface ApiSearchResultItem {
@@ -46,11 +48,22 @@ export interface ApiSearchResultItem {
   price_kzt: string | number  // FastAPI serializes Decimal as string
   duration_days: number | null
   parsed_at: string
-  source_url: string | null   // URL of the specific price page
+  source_url: string | null
+  source_slug: string | null  // parser source identifier: 'kdl' | 'invitro' | 'doq'
 }
 
 export interface ApiSearchResponse {
   query: string
   total: number
   results: ApiSearchResultItem[]
+}
+
+export interface ApiClinicServiceItem {
+  service_id: string
+  service_name: string
+  category: ApiServiceCategory
+  price_kzt: string | number
+  duration_days: number | null
+  parsed_at: string
+  source_url: string | null
 }

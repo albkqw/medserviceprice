@@ -1,5 +1,19 @@
 export type ServiceCategory = 'lab' | 'doctor' | 'diagnostic' | 'procedure'
 
+export type ParserSource = 'kdl' | 'invitro' | 'doq'
+
+export const SOURCE_LABELS: Record<ParserSource, string> = {
+  kdl: 'KDL',
+  invitro: 'Invitro',
+  doq: 'DOQ',
+}
+
+export const SOURCE_BADGE_CLASSES: Record<ParserSource, string> = {
+  kdl: 'bg-blue-100 text-blue-700 border-blue-200',
+  invitro: 'bg-rose-100 text-rose-700 border-rose-200',
+  doq: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+}
+
 export interface City {
   id: string
   name: string
@@ -31,6 +45,9 @@ export interface SearchResult {
   phone: string | null
   working_hours: string | null
   source_url: string | null
+  source: ParserSource | null
+  lat: number | null
+  lng: number | null
   service_id: string
   service_name: string
   category: ServiceCategory
@@ -45,6 +62,16 @@ export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   doctor: 'Приём врача',
   diagnostic: 'Диагностика',
   procedure: 'Процедура',
+}
+
+export interface ClinicService {
+  service_id: string
+  service_name: string
+  category: ServiceCategory
+  price_kzt: number
+  duration_days: number | null
+  parsed_at: string
+  source_url: string | null
 }
 
 export const SORT_OPTIONS = [

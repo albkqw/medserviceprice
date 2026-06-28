@@ -21,6 +21,8 @@ class SearchClinicInfo(BaseModel):
     phone: str | None
     working_hours: str | None
     website: str | None
+    lat: float | None
+    lng: float | None
 
 
 class SearchResultItem(BaseModel):
@@ -30,6 +32,7 @@ class SearchResultItem(BaseModel):
     duration_days: int | None
     parsed_at: datetime
     source_url: str | None
+    source_slug: str | None
 
 
 class SearchResponse(BaseModel):

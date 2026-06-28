@@ -25,7 +25,4 @@ def get_catalog_service(session: AsyncSession = Depends(get_async_session)) -> C
 
 
 def get_search_service(session: AsyncSession = Depends(get_async_session)) -> SearchService:
-    return SearchService(
-        service_repo=ServiceRepository(session),
-        price_repo=PriceRepository(session),
-    )
+    return SearchService(price_repo=PriceRepository(session))

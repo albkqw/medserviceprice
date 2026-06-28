@@ -2,7 +2,6 @@ from decimal import Decimal
 
 from app.models.enums import ServiceCategory
 from app.repositories.price_repository import PriceRepository
-from app.repositories.service_repository import ServiceRepository
 from app.schemas.search import (
     SearchClinicInfo,
     SearchResponse,
@@ -12,12 +11,7 @@ from app.schemas.search import (
 
 
 class SearchService:
-    def __init__(
-        self,
-        service_repo: ServiceRepository,
-        price_repo: PriceRepository,
-    ) -> None:
-        self.service_repo = service_repo
+    def __init__(self, price_repo: PriceRepository) -> None:
         self.price_repo = price_repo
 
     async def search(
@@ -29,14 +23,10 @@ class SearchService:
         max_price: Decimal | None = None,
         limit: int = 50,
     ) -> SearchResponse:
-        services = await self.service_repo.search(query=query, category=category)
-
-        if not services:
-            return SearchResponse(query=query, total=0, results=[])
-
         rows = await self.price_repo.search_prices(
-            service_ids=[s.id for s in services],
+            query=query,
             city_slug=city_slug,
+            category=category,
             min_price=min_price,
             max_price=max_price,
             limit=limit,
@@ -57,11 +47,14 @@ class SearchService:
                     phone=row.Clinic.phone,
                     working_hours=row.Clinic.working_hours,
                     website=row.Clinic.website,
+                    lat=row.Clinic.lat,
+                    lng=row.Clinic.lng,
                 ),
                 price_kzt=row.Price.price_kzt,
                 duration_days=row.Price.duration_days,
                 parsed_at=row.Price.parsed_at,
                 source_url=row.source_url,
+                source_slug=row.source_slug,
             )
             for row in rows
         ]

@@ -64,10 +64,22 @@ export function ResultsList({
 
   const sorted = sortResults(results, sort)
 
+  // Badges only make sense when there's something to compare
+  const minPrice = sorted.length > 1 ? Math.min(...sorted.map((r) => r.price_kzt)) : null
+
+  const withDuration = sorted.filter((r) => r.duration_days != null)
+  const minDuration =
+    withDuration.length > 1 ? Math.min(...withDuration.map((r) => r.duration_days!)) : null
+
   return (
     <div className="flex flex-col gap-3">
       {sorted.map((result, i) => (
-        <ResultCard key={`${result.clinic_id}-${result.service_id}-${i}`} result={result} />
+        <ResultCard
+          key={`${result.clinic_id}-${result.service_id}-${result.price_kzt}`}
+          result={result}
+          isMinPrice={minPrice !== null && result.price_kzt === minPrice}
+          isMinDuration={minDuration !== null && result.duration_days === minDuration}
+        />
       ))}
     </div>
   )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -24,6 +24,11 @@ interface FilterPanelProps {
 function FilterContent({ filters, onFilterChange }: Omit<FilterPanelProps, 'totalResults'>) {
   const [localMin, setLocalMin] = useState(filters.min_price?.toString() ?? '')
   const [localMax, setLocalMax] = useState(filters.max_price?.toString() ?? '')
+
+  useEffect(() => {
+    setLocalMin(filters.min_price?.toString() ?? '')
+    setLocalMax(filters.max_price?.toString() ?? '')
+  }, [filters.min_price, filters.max_price])
 
   const categories: Array<{ value: ServiceCategory | ''; label: string }> = [
     { value: '', label: 'Все категории' },

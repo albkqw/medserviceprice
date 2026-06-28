@@ -1,21 +1,24 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from sqlalchemy import desc, select
 
+from app.db.engine import AsyncSessionLocal
+from app.dependencies.auth import require_admin_key
 from app.models.enums import ParseRunStatus
+from app.models.parse_run import ParseRun
 from app.scheduler.jobs import _PARSERS, run_parser
 from app.scheduler.scheduler import scheduler
 from app.schemas.scheduler import ParseRunResponse, ScheduledJobResponse
 
-router = APIRouter(prefix="/scheduler", tags=["scheduler"])
+router = APIRouter(
+    prefix="/scheduler",
+    tags=["scheduler"],
+    dependencies=[Depends(require_admin_key)],
+)
 
 
 async def _get_runs(source_slug: str | None, limit: int) -> list[ParseRunResponse]:
-    from sqlalchemy import desc, select
-
-    from app.db.engine import AsyncSessionLocal
-    from app.models.parse_run import ParseRun
-
     async with AsyncSessionLocal() as session:
         q = select(ParseRun).order_by(desc(ParseRun.started_at)).limit(limit)
         if source_slug:
@@ -78,9 +81,6 @@ async def list_runs(
 @router.get("/runs/{run_id}", response_model=ParseRunResponse)
 async def get_run(run_id: uuid.UUID) -> ParseRunResponse:
     """Get a specific parse run by ID."""
-    from app.db.engine import AsyncSessionLocal
-    from app.models.parse_run import ParseRun
-
     async with AsyncSessionLocal() as session:
         run = await session.get(ParseRun, run_id)
 
